@@ -112,13 +112,18 @@ description, and for the comment the body."
           ((equal type "ejira-project")
            (message "TODO"))
           (t
-           (jiralib2-update-summary-description
+           (jiralib2-update-summary-description-wbsdate
             id
             (ejira--with-point-on id
               (ejira--strip-properties (org-get-heading t t t t)))
             (ejira-parser-org-to-jira
              (ejira--get-heading-body
-              (ejira--find-task-subheading id ejira-description-heading-name))))))))
+              (ejira--find-task-subheading id ejira-description-heading-name)))
+            (ejira--with-point-on id
+              (org-entry-get (point) "WBS-Start"))
+            (ejira--with-point-on id
+              (org-entry-get (point) "WBS-End"))
+            )))))
 
 (defun ejira--heading-to-item (heading project-id type &rest args)
   "Create an item from HEADING of TYPE into PROJECT-ID with parameters ARGS."
