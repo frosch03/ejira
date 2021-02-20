@@ -65,6 +65,12 @@
 (defvar ejira-description-heading-name "Description"
   "Subheading ejira uses for the description of the item.")
 
+(defvar ejira-wbs-startdate-field nil
+  "Name of the WBS plugins start date field as a quoted Lisp symbol.")
+(defvar ejira-wbs-enddate-field nil
+  "Name of the WBS plugins end date field as a quoted Lisp symbol.")
+
+
 (defcustom ejira-projects nil
   "Projects to synchronize."
   :group 'ejira
@@ -123,7 +129,10 @@ The default value is applicable for:
   summary
   parent
   description
-  comments)
+  comments
+  wbs-startdate
+  wbs-enddate
+  )
 
 (cl-defstruct ejira-comment
   id
@@ -217,7 +226,9 @@ The default value is applicable for:
      :summary (ejira--parse-body (ejira--alist-get item 'fields 'summary))
      :description (ejira--alist-get item 'fields 'description)
      :comments (mapcar #'ejira--parse-comment
-                       (ejira--alist-get item 'fields 'comment 'comments)))))
+                       (ejira--alist-get item 'fields 'comment 'comments))
+     :wbs-startdate (ejira--alist-get item 'fields ejira-wbs-startdate-field)
+     :wbs-enddate (ejira--alist-get item 'fields ejira-wbs-enddate-field))))
 
 (defun ejira--project-file-name (key)
   "Get file path for the project KEY."
@@ -349,7 +360,10 @@ If the issue heading does not exist, fallback to full update."
         (when-let ((minutes (and estimate (/ estimate 60))))
           (org-set-property "Effort" (format "%02d:%02d" (/ minutes 60) (% minutes 60))))
         (when-let ((minutes (and remaining-estimate (/ remaining-estimate 60))))
-          (org-set-property "Left" (format "%02d:%02d" (/ minutes 60) (% minutes 60)))))
+          (org-set-property "Left" (format "%02d:%02d" (/ minutes 60) (% minutes 60))))
+
+        (when wbs-startdate (org-set-property "WBS-Start" wbs-startdate))
+        (when wbs-enddate (org-set-property "WBS-End" wbs-enddate)))
 
       (ejira--get-subheading (ejira--find-heading key) ejira-description-heading-name)
       (ejira--get-subheading (ejira--find-heading key) ejira-comments-heading-name)
@@ -763,7 +777,8 @@ With SHALLOW update only todo state."
       `("key" "status" "assignee")
     `("key" "priority" "assignee" "issuetype" "project" "summary" "description"
       "reporter" "duedate" "created" "updated" "status" "parent" "timetracking"
-      "comment" ,(symbol-name ejira-epic-field) ,(symbol-name ejira-sprint-field))))
+      "comment" ,(symbol-name ejira-epic-field) ,(symbol-name ejira-sprint-field)
+      ,(symbol-name ejira-wbs-startdate-field) ,(symbol-name ejira-wbs-enddate-field))))
 
 (defvar ejira--my-fullname nil)
 (defun ejira--my-fullname ()
